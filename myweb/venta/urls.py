@@ -8,4 +8,5 @@ urlpatterns = [
     path('c_producto', views.crear_producto, name = 'crear_producto'),
     path('u_cliente', views.editar_cliente, name = 'editar_cliente'),
     path('d_cliente', views.borrar_cliente, name = 'borrar_cliente'),
+    path('d_producto', views.borrar_producto, name = 'borrar_producto'),
 ]

@@ -167,7 +167,7 @@ def borrar_cliente( request ):
 
 #### Productos
 def consulta_productos(request):
-    productos = Producto.objects.all().order_by('-id_producto')[:10]  # Limitando a los últimos 10 productos
+    productos = Producto.objects.all().order_by('-id_producto')[:20]  # Limitando a los últimos 10 productos
     context = {
         'productos': productos,
         'titulo': 'Lista de Productos'
@@ -189,5 +189,72 @@ def crear_producto(request):
         'titulo': 'Crear Producto'
     }
     return render(request, 'venta/crear_producto.html', context)
+
+def borrar_producto( request ):
+    productos_encontrados = []
+    tipo_busqueda = 'nombre'
+    termino_busqueda = '' #dentro de las cajas
+    total_registros = 0
+
+    if request.method == 'POST':
+        if 'consultar' in request.POST:
+            tipo_busqueda = request.POST.get('tipo_busqueda','nombre')
+            termino_busqueda = request.POST.get('termino_busqueda','nombre').strip()
+
+            if termino_busqueda:
+                if tipo_busqueda == 'nombre':
+                    try:
+                        productos_encontrados = Producto.objects.filter(nom_prod = termino_busqueda).order_by('id_producto')
+                        #productos_encontrados = [producto]
+                        if not productos_encontrados:
+                          messages.error(request, 'No se encontraron registros.')
+                    except Producto.DoesNotExist:
+                        messages.error(request, 'No se encontro el producto para el término ingresado.')
+                elif tipo_busqueda == 'descripcion':
+                      productos_encontrados = Producto.objects.filter(
+                            des_prod__icontains = termino_busqueda
+                      ).order_by('id_producto')
+                      if not productos_encontrados:
+                          messages.error(request, 'No se encontraron registros.')
+                
+                total_registros = len(productos_encontrados)
+
+                if total_registros > 0:
+                    messages.success(request, f'Se encontraron {total_registros} registro(s)')
+
+            else:
+                messages.error(request, 'Ingrese un término de búsqueda...')
+        elif 'eliminar' in request.POST:
+            producto_eliminar = request.POST.get('producto_eliminar')
+            if producto_eliminar:
+                try:
+                    producto = Producto.objects.get(id_producto = producto_eliminar)
+                    nombre_producto = producto.nom_prod
+                    producto.delete()
+                    messages.success(request, f'El Producto con Nombre {nombre_producto} fue eliminado con exito...')
+
+                    tipo_busqueda = request.POST.get('tipo_busqueda_actual','nombre')
+                    termino_busqueda = request.POST.get('termino_busqueda_actual','')
+
+                    if termino_busqueda:
+                        if tipo_busqueda == 'nombre':                                                            
+                                productos_encontrados = []
+                        elif tipo_busqueda == 'descripcion':
+                            productos_encontrados = Producto.objects.filter(
+                                    nom_prod__icontains = termino_busqueda
+                            ).order_by('id_producto')                           
+                        
+                        total_registros = len(productos_encontrados)                        
+
+                except Producto.DoesNotExist:
+                        messages.error(request, 'Producto no encontrado.')
+    context = {
+        'productos_encontrados': productos_encontrados,
+        'total_registros': total_registros,
+        'tipo_busqueda': tipo_busqueda,
+        'termino_busqueda': termino_busqueda
+    }
+
+    return render(request, 'venta/borrar_producto.html', context)
 
 ### End Productos
