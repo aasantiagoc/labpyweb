@@ -95,6 +95,74 @@ def editar_cliente(request):
         'dni_buscado': dni_buscado
     }
     return render(request, 'venta/editar_cliente.html', context)
+
+def borrar_cliente( request ):
+    clientes_encontrados = []
+    tipo_busqueda = 'dni'
+    termino_busqueda = '' #dentro de las cajas
+    total_registros = 0
+
+    if request.method == 'POST':
+        if 'consultar' in request.POST:
+            tipo_busqueda = request.POST.get('tipo_busqueda','dni')
+            termino_busqueda = request.POST.get('termino_busqueda','dni').strip()
+
+            if termino_busqueda:
+                if tipo_busqueda == 'dni':
+                    try:
+                        cliente = Cliente.objects.get(id_cliente = termino_busqueda)
+                        clientes_encontrados = [cliente]
+                    except Cliente.DoesNotExist:
+                        messages.error(request, 'No se encontraron registros...')
+                elif tipo_busqueda == 'nombre':
+                      clientes_encontrados = Cliente.objects.filter(
+                            ape_nom__icontains = termino_busqueda
+                      ).order_by('id_cliente')
+                      if not clientes_encontrados:
+                          messages.error(request, 'No se encontraron registros...')
+                
+                total_registros = len(clientes_encontrados)
+
+                if total_registros > 0:
+                    messages.success(request, f'Se encontraron {total_registros} registro(s)')
+
+            else:
+                messages.error(request, 'Ingrese un término de búsqueda...')
+        elif 'eliminar' in request.POST:
+            dni_eliminar = request.POST.get('dni_eliminar')
+            if dni_eliminar:
+                try:
+                    cliente = Cliente.objects.get(id_cliente = dni_eliminar)
+                    cliente.delete()
+                    messages.success(request, f'Cliente con DNI {dni_eliminar} fue eliminado con exito...')
+
+                    tipo_busqueda = request.POST.get('tipo_busqueda_actual','dni')
+                    termino_busqueda = request.POST.get('termino_busqueda_actual','')
+
+                    if termino_busqueda:
+                        if tipo_busqueda == 'dni':                                                            
+                                clientes_encontrados = []
+                        elif tipo_busqueda == 'nombre':
+                            clientes_encontrados = Cliente.objects.filter(
+                                    ape_nom__icontains = termino_busqueda
+                            ).order_by('id_cliente')                           
+                        
+                        total_registros = len(clientes_encontrados)                        
+
+                except Cliente.DoesNotExist:
+                        messages.error(request, 'Cliente no encontrado...')
+    context = {
+        'clientes_encontrados': clientes_encontrados,
+        'total_registros': total_registros,
+        'tipo_busqueda': tipo_busqueda,
+        'termino_busqueda': termino_busqueda
+    }
+
+    return render(request, 'venta/borrar_cliente.html', context)
+
+
+
+
 ###End Clientes
 
 #### Productos
