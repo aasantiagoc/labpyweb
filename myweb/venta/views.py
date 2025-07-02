@@ -6,7 +6,17 @@ from .forms import ClienteCreateForm, ProductoCreateForm, ClienteUpdateForm
 from django.shortcuts import redirect
 from django.contrib import messages
 from pprint import pprint
+from django.contrib.auth import authenticate, login, logout
 
+def user_login(request):
+    if request.user.is_authenticated:
+        return redirect('home')
+    if request.method == 'POST':
+        username = request.POST.get('username')
+
+
+def home(request):
+    return render(request, 'venta/home.html')
 ### Clientes
 def conculta_clientes(request):
     clientes = Cliente.objects.all().order_by('id_cliente')
