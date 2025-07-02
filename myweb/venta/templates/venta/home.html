@@ -52,6 +52,23 @@
             font-size: 20px;
         }
         
+        .user-info {
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 14px;
+        }
+        
+        .user-info .user-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .user-info .user-role {
+            opacity: 0.8;
+            font-size: 12px;
+        }
+        
         .sidebar-menu {
             padding: 20px 0;
         }
@@ -82,6 +99,12 @@
             border-right: 3px solid white;
         }
         
+        .menu-item.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        
         .menu-item .icon {
             margin-right: 10px;
             width: 20px;
@@ -102,12 +125,30 @@
             padding: 20px 30px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .main-header h1 {
             color: #333;
             font-size: 24px;
             font-weight: 600;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .user-badge {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
         }
         
         .content-area {
@@ -219,6 +260,27 @@
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
         }
         
+        .access-denied {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-bottom: 30px;
+            border-left: 5px solid #f44336;
+        }
+        
+        .access-denied h3 {
+            color: #f44336;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        
+        .access-denied p {
+            color: #666;
+            font-size: 16px;
+        }
+        
         /* Mobile menu toggle */
         .menu-toggle {
             display: none;
@@ -254,6 +316,8 @@
             
             .main-header {
                 padding: 20px 20px 20px 60px;
+                flex-direction: column;
+                gap: 15px;
             }
             
             .content-area {
@@ -317,39 +381,59 @@
                     Info Ventas
                 </h2>
             </div>
+            
+            <div class="user-info">
+                <div class="user-name">👤 {{ user.get_full_name|default:user.username }}</div>
+                <div class="user-role">
+                    {% if user_permissions.is_admin %}
+                        🔐 Administrador
+                    {% else %}
+                        👥 Usuario del Sistema
+                    {% endif %}
+                </div>
+            </div>
+            
             <div class="sidebar-menu">
                 <button class="menu-item active" onclick="showSection('inicio')">
                     <span class="icon">🏠</span>
                     Inicio
                 </button>
-                <button class="menu-item" onclick="showSection('clientes')">
+                
+                <button class="menu-item {% if not user_permissions.can_manage_clients %}disabled{% endif %}" 
+                        onclick="{% if user_permissions.can_manage_clients %}showSection('clientes'){% endif %}">
                     <span class="icon">👥</span>
                     Clientes
                 </button>
-                <button class="menu-item">
+                
+                <button class="menu-item {% if not user_permissions.can_manage_providers %}disabled{% endif %}">
                     <span class="icon">🏢</span>
                     Proveedores
                 </button>
-                <button class="menu-item">
+                
+                <button class="menu-item {% if not user_permissions.can_manage_products %}disabled{% endif %}">
                     <span class="icon">📦</span>
                     Productos
                 </button>
-                <button class="menu-item">
+                
+                <button class="menu-item {% if not user_permissions.can_manage_purchases %}disabled{% endif %}">
                     <span class="icon">🛒</span>
                     Compras
                 </button>
-                <button class="menu-item">
+                
+                <button class="menu-item {% if not user_permissions.can_manage_sales %}disabled{% endif %}">
                     <span class="icon">💰</span>
                     Ventas
                 </button>
-                <button class="menu-item">
+                
+                <button class="menu-item {% if not user_permissions.can_manage_users %}disabled{% endif %}">
                     <span class="icon">👤</span>
                     Usuarios
                 </button>
-                <button class="menu-item">
+                
+                <a href="{% url 'logout' %}" class="menu-item" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
                     <span class="icon">🚪</span>
                     Cerrar Sesión
-                </button>
+                </a>
             </div>
         </nav>
         
@@ -357,41 +441,59 @@
         <main class="main-content">
             <header class="main-header">
                 <h1 id="main-title">Sistema de Gestión de Ventas</h1>
+                <div class="header-actions">
+                    <div class="user-badge">
+                        {{ user.username }}
+                    </div>
+                </div>
             </header>
             
             <div class="content-area">
                 <!-- Sección de Inicio -->
                 <section id="inicio-section" class="welcome-section">
-                    <h2>Bienvenido al Sistema Info Ventas</h2>
-                    <p>Seleccione una opción del menú lateral para comenzar a gestionar su negocio.</p>
+                    <h2>Bienvenido {{ user.get_full_name|default:user.username }}</h2>
+                    <p>
+                        {% if user_permissions.is_admin %}
+                            Como administrador, tienes acceso completo a todas las funciones del sistema.
+                        {% else %}
+                            Seleccione una opción del menú lateral para la cual tiene permisos asignados.
+                        {% endif %}
+                    </p>
                 </section>
                 
                 <!-- Sección de Gestión de Clientes -->
+                {% if user_permissions.can_manage_clients %}
                 <section id="clientes-section" class="gestion-clientes">
                     <div class="gestion-header">
                         <h2>Gestión de Clientes</h2>
                     </div>
                     <div class="crud-menu">
                         <div class="crud-buttons">
-                            <a href="/venta/c_cliente" class="crud-btn crear">
+                            <a href="{% url 'crear_cliente' %}" class="crud-btn crear">
                                 <span>➕</span>
                                 Crear
                             </a>
-                            <a href="/venta/q_cliente" class="crud-btn consultar">
+                            <a href="{% url 'lista_clientes' %}" class="crud-btn consultar">
                                 <span>👁️</span>
                                 Consultar
                             </a>
-                            <a href="/venta/u_cliente" class="crud-btn modificar">
+                            <a href="{% url 'editar_cliente' %}" class="crud-btn modificar">
                                 <span>✏️</span>
                                 Modificar
                             </a>
-                            <a href="/venta/d_cliente" class="crud-btn eliminar">
+                            <a href="{% url 'borrar_cliente' %}" class="crud-btn eliminar">
                                 <span>🗑️</span>
                                 Eliminar
                             </a>
                         </div>
                     </div>
                 </section>
+                {% else %}
+                <section id="clientes-section" class="access-denied" style="display: none;">
+                    <h3>🚫 Acceso Denegado</h3>
+                    <p>No tiene permisos para acceder a la gestión de clientes.</p>
+                </section>
+                {% endif %}
             </div>
         </main>
     </div>
@@ -412,9 +514,11 @@
                 document.getElementById('main-title').textContent = 'Sistema de Gestión de Ventas';
                 event.target.classList.add('active');
             } else if (section === 'clientes') {
-                document.getElementById('clientes-section').style.display = 'block';
-                document.getElementById('main-title').textContent = 'Gestión de Clientes (Cuando se selecciona Clientes)';
-                event.target.classList.add('active');
+                {% if user_permissions.can_manage_clients %}
+                    document.getElementById('clientes-section').style.display = 'block';
+                    document.getElementById('main-title').textContent = 'Gestión de Clientes (Cuando se selecciona Clientes)';
+                    event.target.classList.add('active');
+                {% endif %}
             }
             
             // Cerrar sidebar en móvil

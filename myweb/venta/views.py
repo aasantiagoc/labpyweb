@@ -7,18 +7,72 @@ from django.shortcuts import redirect
 from django.contrib import messages
 from pprint import pprint
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required, permission_required
 
 def user_login(request):
     if request.user.is_authenticated:
         return redirect('home')
     if request.method == 'POST':
         username = request.POST.get('username')
+        password = request.POST.get('password')
 
+        if username and password:
+            user = authenticate(request, username = username, password = password)
+            if user is not None:
+                login(request, user)
+                return redirect('home')
+            else:
+                messages.error(request, 'Usuario y/o contraseña son incorrectos')
+        else:
+            messages.error(request, 'Usuario y/o contraseña no son válidos')
+    
+    return render(request, 'venta/login.html')
 
+def user_logout(request):
+    logout(request)
+    #return render(request, 'venta/login.html')
+    return redirect('login')
+
+@login_required
 def home(request):
-    return render(request, 'venta/home.html')
+    #pprint(request.user.groups)
+    #for perm in request.user.get_all_permissions():
+        #print(perm)
+    #for group in request.user.groups.all():
+        #print(group.name)
+    user_permissions = {
+        'can_manage_clients': (
+            request.user.is_superuser or 
+            request.user.groups.filter( name = 'gpr_cliente').exists() or
+            request.user.has_perm('venta.add_cliente')
+        ),
+        'can_manage_products': (
+            request.user.is_superuser or 
+            request.user.groups.filter( name = 'gpr_producto').exists() or
+            request.user.has_perm('venta.add_producto')
+        ),
+        'is_admin': request.user.is_superuser
+    }
+    print("Puede gestionar clientes:", user_permissions['can_manage_clients'])
+    print("Puede gestionar productos:", user_permissions['can_manage_products'])
+    print("Puede gestionar todo:", user_permissions['is_admin'])
+    context = {
+        'user_permissions': user_permissions,
+        'user': request.user
+    }
+    return render(request, 'venta/home.html', context)
+
 ### Clientes
+from django.http import HttpResponseForbidden
+@login_required
+@permission_required('venta.view_cliente', raise_exception=True)
 def conculta_clientes(request):
+
+    if not (request.user.is_superuser or 
+            request.user.groups.filter(name = 'grp_cliente').exists() or 
+            request.user.has_perm('venta.view_cliente')):
+        return HttpResponseForbidden('No tiene permisos para ingresar aquí.')
+
     clientes = Cliente.objects.all().order_by('id_cliente')
     context = {
         'clientes': clientes,
