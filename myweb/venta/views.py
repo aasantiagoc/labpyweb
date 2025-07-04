@@ -8,7 +8,23 @@ from django.contrib import messages
 from pprint import pprint
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, permission_required
+from django.http import HttpResponseForbidden
 
+###Others
+
+def handle_undefined_url(request):
+    if not request.user.is_authenticated:
+        messages.warning(request, 'Debe iniciar sesión para acceder al sistema')
+        return redirect('login')
+    else:
+        messages.info(request, 'La página solicitada no existe. Se ha redirigirá al inicio.')
+    
+    return redirect('home')
+        
+
+###End 
+
+###login
 def user_login(request):
     if request.user.is_authenticated:
         return redirect('home')
@@ -28,6 +44,7 @@ def user_login(request):
     
     return render(request, 'venta/login.html')
 
+@login_required
 def user_logout(request):
     logout(request)
     #return render(request, 'venta/login.html')
@@ -61,9 +78,9 @@ def home(request):
         'user': request.user
     }
     return render(request, 'venta/home.html', context)
+###End Login
 
 ### Clientes
-from django.http import HttpResponseForbidden
 @login_required
 @permission_required('venta.view_cliente', raise_exception=True)
 def conculta_clientes(request):
@@ -80,7 +97,16 @@ def conculta_clientes(request):
     }
     return render(request, 'venta/lista_clientes.html',context)
 
+@login_required
+@permission_required('venta.add_cliente',raise_exception=True)
 def crear_cliente(request):
+    if not (request.user.is_superuser or 
+        request.user.groups.filter(name = 'grp_cliente').exists() or 
+        request.user.has_perm('venta.add_cliente')):        
+        return render(request, '403.html', {
+            'mensaje': 'No tiene permisos para actualizar cliente.'
+        }, status=403)
+
     dni_duplicado = False
     if request.method == 'POST':
         #dni_duplicado = False
@@ -109,7 +135,17 @@ def crear_cliente(request):
     }
     return render(request, 'venta/crear_cliente.html', context)
 
+@login_required
+#@permission_required('venta.change_cliente',raise_exception=True)
 def editar_cliente(request):
+
+    if not (request.user.is_superuser or 
+            request.user.groups.filter(name = 'grp_cliente').exists() or 
+            request.user.has_perm('venta.change_cliente')):
+         return render(request, 'venta/403.html', {
+            'mensaje': 'No tiene permisos para actualizar cliente.'
+        }, status=403)
+
     cliente = None
     dni_buscado = None
     form = None
@@ -160,7 +196,15 @@ def editar_cliente(request):
     }
     return render(request, 'venta/editar_cliente.html', context)
 
+@login_required
+@permission_required('venta.delete_cliente',raise_exception=True)
 def borrar_cliente( request ):
+
+    if not (request.user.is_superuser or 
+            request.user.groups.filter(name = 'grp_cliente').exists() or 
+            request.user.has_perm('venta.delete_cliente')):
+        return HttpResponseForbidden('No tiene permisos para eliminar cliente.')
+   
     clientes_encontrados = []
     tipo_busqueda = 'dni'
     termino_busqueda = '' #dentro de las cajas
@@ -224,12 +268,12 @@ def borrar_cliente( request ):
 
     return render(request, 'venta/borrar_cliente.html', context)
 
-
-
-
 ###End Clientes
 
+
 #### Productos
+
+@login_required
 def consulta_productos(request):
     productos = Producto.objects.all().order_by('-id_producto')[:20]  # Limitando a los últimos 10 productos
     context = {
@@ -238,6 +282,7 @@ def consulta_productos(request):
     }
     return render(request, 'venta/lista_productos.html',context)
 
+@login_required
 def crear_producto(request):
     if request.method == 'POST':
         form = ProductoCreateForm(request.POST)
@@ -254,6 +299,7 @@ def crear_producto(request):
     }
     return render(request, 'venta/crear_producto.html', context)
 
+@login_required
 def borrar_producto( request ):
     productos_encontrados = []
     tipo_busqueda = 'nombre'

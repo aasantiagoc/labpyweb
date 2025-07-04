@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-kq^#zl^!zdo6c3je+%un$1$d8^kxglrzje&wef+=+u*ob8#xxf
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1','localhost']
 
 
 # Application definition
@@ -48,6 +48,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'venta.mdl_security.SimpleMiddleware',
+    'venta.middleware.AuthenticationMiddleware'
 ]
 
 ROOT_URLCONF = 'myweb.urls'
@@ -123,3 +125,4 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = '/login/'  # redirige aquí cuando no está autenticado
+
