@@ -184,6 +184,20 @@
             overflow: hidden;
             display: none;
         }
+        .gestion-productos {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: none;
+        }
+        .gestion-sales {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: none;
+        }
         
         .gestion-header {
             background: linear-gradient(135deg, #4CAF50, #45a049);
@@ -410,7 +424,8 @@
                     Proveedores
                 </button>
                 
-                <button class="menu-item {% if not user_permissions.can_manage_products %}disabled{% endif %}">
+                <button class="menu-item {% if not user_permissions.can_manage_products %}disabled{% endif %}" 
+                            onclick="{% if user_permissions.can_manage_products %}showSection('productos'){% endif %}">
                     <span class="icon">📦</span>
                     Productos
                 </button>
@@ -420,7 +435,8 @@
                     Compras
                 </button>
                 
-                <button class="menu-item {% if not user_permissions.can_manage_sales %}disabled{% endif %}">
+                <button class="menu-item {% if not user_permissions.can_manage_sales %}disabled{% endif %}" 
+                            onclick="{% if user_permissions.can_manage_sales %}showSection('ventas'){% endif %}">
                     <span class="icon">💰</span>
                     Ventas
                 </button>
@@ -488,12 +504,57 @@
                         </div>
                     </div>
                 </section>
-                {% else %}
+                {% endif %}
+
+                {% if user_permissions.can_manage_products %}
+                <section id="productos-section" class="gestion-productos">
+                    <div class="gestion-header">
+                        <h2>Gestión de Productos</h2>
+                    </div>
+                    <div class="crud-menu">
+                        <div class="crud-buttons">
+                            <a href="{% url 'crear_producto' %}" class="crud-btn crear">
+                                <span>➕</span>
+                                Crear
+                            </a>
+                            <a href="{% url 'lista_productos' %}" class="crud-btn consultar">
+                                <span>👁️</span>
+                                Consultar
+                            </a>
+                            <a href="{% url 'borrar_producto' %}" class="crud-btn eliminar">
+                                <span>🗑️</span>
+                                Eliminar
+                            </a>
+                        </div>
+                    </div>
+                </section>
+                {% endif %}
+                {% if user_permissions.can_manage_sales %}
+                <section id="sales-section" class="gestion-sales">
+                    <div class="gestion-header">
+                        <h2>Gestión de Ventas</h2>
+                    </div>
+                    <div class="crud-menu">
+                        <div class="crud-buttons">
+                            <a href="{% url 'crear_venta' %}" class="crud-btn crear">
+                                <span>➕</span>
+                                Crear
+                            </a>
+                            <a href="{% url 'lista_ventas' %}" class="crud-btn consultar">
+                                <span>👁️</span>
+                                Consultar
+                            </a>
+                        </div>
+                    </div>
+                </section>
+                {% endif %}
+                {% if not user_permissions.can_manage_clients and not user_permissions.can_manage_products and not user_permissions.can_manage_sales %}
                 <section id="clientes-section" class="access-denied" style="display: none;">
                     <h3>🚫 Acceso Denegado</h3>
                     <p>No tiene permisos para acceder a la gestión de clientes.</p>
                 </section>
                 {% endif %}
+
             </div>
         </main>
     </div>
@@ -508,6 +569,11 @@
             const menuItems = document.querySelectorAll('.menu-item');
             menuItems.forEach(item => item.classList.remove('active'));
             
+            //hidden
+            document.getElementById('clientes-section').style.display = 'none';
+            document.getElementById('productos-section').style.display = 'none';
+            document.getElementById('sales-section').style.display = 'none';
+
             // Mostrar la sección seleccionada y actualizar título
             if (section === 'inicio') {
                 document.getElementById('inicio-section').style.display = 'block';
@@ -517,6 +583,20 @@
                 {% if user_permissions.can_manage_clients %}
                     document.getElementById('clientes-section').style.display = 'block';
                     document.getElementById('main-title').textContent = 'Gestión de Clientes (Cuando se selecciona Clientes)';
+                    event.target.classList.add('active');
+                {% endif %}
+            } else if (section === 'productos') {
+                
+                {% if user_permissions.can_manage_products %}
+                    document.getElementById('productos-section').style.display = 'block';
+                    document.getElementById('main-title').textContent = 'Gestión de Productos (Cuando se selecciona Productos)';
+                    event.target.classList.add('active');
+                {% endif %}
+            } else if (section === 'ventas') {
+                
+                {% if user_permissions.can_manage_sales %}
+                    document.getElementById('sales-section').style.display = 'block';
+                    document.getElementById('main-title').textContent = 'Gestión de Ventas (Cuando se selecciona Ventas)';
                     event.target.classList.add('active');
                 {% endif %}
             }

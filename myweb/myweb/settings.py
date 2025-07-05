@@ -124,5 +124,9 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOGIN_URL = '/login/'  # redirige aquí cuando no está autenticado
+LOGIN_URL = '/'  # redirige aquí cuando no está autenticado
+LOGIN_REDIRECT_URL = '/home/'
+LOGOUT_LOGIN_URL = '/'
 
+
+SESSION_COOKIE_AGE = 3600 #5 MINUTOS

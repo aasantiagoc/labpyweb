@@ -8,12 +8,14 @@ class AuthenticationMiddleware:
     
         #URLs que no requieren autenticación
         self.public_urls = [
-            '/',            
-            '/login/',            
+            '/',                        
+            '/admin/',            
+            '/admin/login/', 
             '/logout/'
         ]
     def __call__(self, request):
         #Verificar URL actual
+        
         if self.is_public_url(request.path):
             response = self.get_response(request)
             return response

@@ -1,8 +1,8 @@
 ### Imports
 
 from django.shortcuts import render
-from .models import Cliente, Producto
-from .forms import ClienteCreateForm, ProductoCreateForm, ClienteUpdateForm
+from .models import Cliente, Producto, Venta, VentaDetalle
+from .forms import ClienteCreateForm, ProductoCreateForm, ClienteUpdateForm, VentaCreateForm
 from django.shortcuts import redirect
 from django.contrib import messages
 from pprint import pprint
@@ -16,8 +16,8 @@ def handle_undefined_url(request):
     if not request.user.is_authenticated:
         messages.warning(request, 'Debe iniciar sesión para acceder al sistema')
         return redirect('login')
-    else:
-        messages.info(request, 'La página solicitada no existe. Se ha redirigirá al inicio.')
+    #else:
+        #messages.info(request, 'La página solicitada no existe. Se ha redirigirá al inicio.')
     
     return redirect('home')
         
@@ -68,11 +68,16 @@ def home(request):
             request.user.groups.filter( name = 'gpr_producto').exists() or
             request.user.has_perm('venta.add_producto')
         ),
+        'can_manage_sales': (
+            request.user.is_superuser or 
+            request.user.groups.filter( name = 'gpr_venta').exists() or
+            request.user.has_perm('venta.add_venta')
+        ),
         'is_admin': request.user.is_superuser
     }
-    print("Puede gestionar clientes:", user_permissions['can_manage_clients'])
-    print("Puede gestionar productos:", user_permissions['can_manage_products'])
-    print("Puede gestionar todo:", user_permissions['is_admin'])
+    #print("Puede gestionar clientes:", user_permissions['can_manage_clients'])
+    #print("Puede gestionar productos:", user_permissions['can_manage_products'])
+    #print("Puede gestionar todo:", user_permissions['is_admin'])
     context = {
         'user_permissions': user_permissions,
         'user': request.user
@@ -157,7 +162,7 @@ def editar_cliente(request):
                     cliente = Cliente.objects.get(id_cliente=dni_buscado)
                     form = ClienteUpdateForm(instance=cliente)
                     messages.success(request, f'Cliente encontrado: {cliente.ape_nom}.')
-                    pprint(f"Cliente encontrado: {cliente.fec_reg}")
+                    #pprint(f"Cliente encontrado: {cliente.fec_reg}")
                 except Cliente.DoesNotExist:
                     messages.error(request, 'Cliente no encontrado.')
                     #return redirect('crear_cliente')
@@ -368,3 +373,82 @@ def borrar_producto( request ):
     return render(request, 'venta/borrar_producto.html', context)
 
 ### End Productos
+
+### Ventas
+def crear_venta(request):
+    _productos = Producto.objects.all()
+    if request.method == 'POST':
+        form = VentaCreateForm(request.POST)
+        id_cliente = None        
+        
+        if form.is_valid():
+            
+            id_cliente = request.POST.get('id_cliente', '').strip()           
+            productos = request.POST.getlist('producto[]')
+            cantidades = request.POST.getlist('cantidad[]')
+            
+            if not id_cliente:
+                messages.error(request, 'Debe seleccionar un cliente para la venta.')                
+                return render(request, 'venta/crear_venta.html', {'form': form, 'titulo': 'Crear Venta', 'productos': _productos})
+            
+            if productos.__len__() <= 1 or cantidades.__len__() <= 1:
+                messages.error(request, 'Debe agregar al menos un producto.')                
+                return render(request, 'venta/crear_venta.html', {'form': form, 'titulo': 'Crear Venta', 'productos': _productos})
+            
+            venta = form.save(commit=False)
+            venta.total = 0  # lo calculamos abajo
+            venta.save()
+            total = 0
+            
+            #print("aqui")
+            #for producto in productos:
+                #print(producto)
+            #return render(request, 'venta/crear_venta.html', {'form': form, 'titulo': 'Crear Venta', 'productos': _productos})
+        
+            for i in range(len(productos)):
+                producto_id = productos[i]            
+                cantidad = cantidades[i]
+                if producto_id and cantidad:                                                        
+                    producto = Producto.objects.get(id_producto=producto_id)   
+                    #return render(request, 'venta/crear_venta.html', {'form': form, 'titulo': 'Crear Venta', 'productos': _productos})                 
+                    detalle = VentaDetalle(
+                        id_venta = venta,
+                        id_producto = producto,
+                        cantidad = cantidad,
+                        precio_unitario = producto.precio,  # asumimos que `precio` está en el modelo Producto
+                    )                    
+                    detalle.save()
+                    
+                    total += detalle.subtotal
+
+            venta.total = total
+            venta.save()
+
+            messages.success(request, 'Venta registrada exitosamente.')
+            return redirect('lista_ventas')
+    else:
+        form = VentaCreateForm()    
+
+    context = {
+        'form': form,
+        'titulo': 'Crear Venta',
+        'productos': _productos
+    }
+    return render(request, 'venta/crear_venta.html', context)
+
+def consulta_ventas(request):
+    ventas = Venta.objects.filter(total__gt=0.0).order_by('-fecha_reg')[:20]  # Limitando a los últimos 10 productos
+    context = {
+        'ventas': ventas,
+        'titulo': 'Lista de Ventas'
+    }
+    return render(request, 'venta/lista_ventas.html',context)
+
+def consulta_detalle(request, id):
+    detalles = VentaDetalle.objects.filter(id_venta = id).order_by('-id_venta_detalle')[:20]  # Limitando a los últimos 10 productos
+    context = {
+        'detalles': detalles,
+        'titulo': 'Lista de Productos Vendidos'
+    }
+    return render(request, 'venta/lista_venta_detalle.html',context)
+### End

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Cliente, Producto
+from .models import Cliente, Producto, Venta, VentaDetalle
 from datetime import date
 
 class ClienteCreateForm(forms.ModelForm):
@@ -73,8 +73,6 @@ class ClienteUpdateForm(forms.ModelForm):
             }
         }
 
-
-
 class ProductoCreateForm(forms.ModelForm):
     class Meta:
         model = Producto
@@ -112,3 +110,64 @@ class ProductoCreateForm(forms.ModelForm):
                 'required': 'La fecha de vencimiento es obligatoria'
             }
         }
+
+class VentaCreateForm(forms.ModelForm):
+    class Meta:
+        model = Venta   
+        fields = ['id_cliente', 'total']
+        labels = {
+            'id_cliente': 'Cliente',
+            'total': 'Total'
+        }
+        widgets = {
+            'id_cliente': forms.Select(attrs={'class': 'form-select'}),
+            'total': forms.NumberInput(attrs={
+                'class': 'form-control bg-light text-muted', 
+                'placeholder': 'Ingrese el total de la venta', 
+                'readonly': 'readonly', 
+                'id': 'total',
+                'style': 'user-select: none; cursor: not-allowed;'
+            })
+        }
+        error_messages = {
+            'id_cliente': {
+                'required': 'El cliente es obligatorio'
+            },
+            'total': {
+                'required': 'El total es obligatorio',
+                'invalid': 'Ingrese un valor numérico válido'
+            }
+        }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Agrega la opción "-- SELECCIONE --" al inicio
+        self.fields['id_cliente'].empty_label = '-- SELECCIONE --'
+        self.fields['total'].initial = 0.00
+
+class VentaDetalleForm(forms.ModelForm):
+    class Meta:
+        model = VentaDetalle
+        fields = ['id_producto', 'cantidad', 'precio_unitario']
+        labels = {
+            'id_producto': 'Producto',
+            'cantidad': 'Cantidad',
+            'precio_unitario': 'Precio Unitario'
+        }
+        widgets = {
+            'id_producto': forms.Select(attrs={'class': 'form-select'}),
+            'cantidad': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ingrese la cantidad'}),
+            'precio_unitario': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ingrese el precio unitario'})
+        }
+        error_messages = {
+            'id_producto': {
+                'required': 'El producto es obligatorio'
+            },
+            'cantidad': {
+                'required': 'La cantidad es obligatoria',
+                'invalid': 'Ingrese un valor numérico válido'
+            },
+            'precio_unitario': {
+                'required': 'El precio unitario es obligatorio',
+                'invalid': 'Ingrese un valor numérico válido'
+            }
+        }        

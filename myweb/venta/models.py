@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator
+from decimal import Decimal
 
 # Create your models here.
 class Cliente(models.Model): # type: ignore
@@ -50,3 +51,44 @@ class Producto(models.Model): # type: ignore
 '''
 Captura de la Image de la tabla del Producto en el Admin.
 '''
+
+class Venta(models.Model): 
+    id_venta = models.AutoField(primary_key=True)
+    id_cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)    
+    total = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0.01)]  # Solo acepta valores > 0
+    )
+    fecha_reg = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Venta ID: {self.id_venta} - Cliente: {self.id_cliente}"
+    
+
+class VentaDetalle(models.Model): 
+    id_venta_detalle = models.AutoField(primary_key=True)
+    id_venta = models.ForeignKey(Venta, on_delete=models.CASCADE)
+    id_producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField(default=1)
+    precio_unitario = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0.01)]  # Solo acepta valores > 0
+    )
+    subtotal = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0.01)]  # Solo acepta valores > 0
+    )
+    fecha_reg = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        cantidad = Decimal(str(self.cantidad))
+        precio = Decimal(str(self.precio_unitario))
+        self.subtotal = cantidad * precio
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Detalle ID: {self.id_venta_detalle} - Venta: {self.id_venta} - Producto: {self.id_producto} - Cantidad: {self.cantidad}"
+    
