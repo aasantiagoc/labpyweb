@@ -1,3 +1,13 @@
+# Examen Final
+### Registro de Venta
+### Listado de Ventas
+### Detalle de Venta
+
+![image](https://github.com/user-attachments/assets/93da12db-905a-4e9e-90cd-9c4ca1c70ae1)
+
+
+
+
 # Listar Producto
 <img src="https://github.com/user-attachments/assets/5683d09e-3b8b-46c7-a606-04d47d8e4035" width="50%"/>
 
